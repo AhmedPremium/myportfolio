@@ -1,41 +1,22 @@
-// Lazy-load @google/genai at runtime so it is NOT bundled into the main client bundle.
-// This prevents Node-only code from breaking the browser bundle and keeps the initial bundle smaller.
-
+// Client-side helper: call the serverless endpoint instead of using process or bundling the SDK
 export const chatWithAssistant = async (message: string) => {
   try {
-    // Vite replaces `process.env.API_KEY` at build time with the configured value (or undefined).
-    const apiKey = (process as any)?.env?.API_KEY as string | undefined;
-
-    if (!apiKey) {
-      console.warn('Gemini API key is not configured for this deployment.');
-      return "AI is not configured for this deployment. Please use the contact page to reach out.";
-    }
-
-    // Dynamically import the ESM build from the CDN at runtime.
-    // Using the full URL ensures it won't get bundled or cause server-only code to be included.
-    const module = await import('https://esm.sh/@google/genai');
-    const GoogleGenAI = (module as any).GoogleGenAI ?? (module as any).default?.GoogleGenAI;
-
-    if (!GoogleGenAI) {
-      console.error('Could not load GoogleGenAI from the ESM module');
-      return "AI is currently unavailable. Please try again later.";
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: message,
-      config: {
-        systemInstruction: `You are the AI assistant for 'QwertyDeveloper', a world-class product designer and engineer's portfolio.\n        Your tone is professional, helpful, minimalist, and "Apple-like"—sophisticated but concise.\n        You know about QwertyDeveloper's projects (Horizon OS, Aura Health, Nebula Engine) and experience.\n        Keep answers short and elegant. If someone asks for a meeting, tell them to use the contact link.`,
-        temperature: 0.7,
-        topP: 0.9,
-      },
+    const res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
     });
 
-    return response.text || "I'm sorry, I couldn't process that request.";
+    if (!res.ok) {
+      const text = await res.text().catch(() => null);
+      console.error('Gemini endpoint error:', res.status, text);
+      return 'I am currently unavailable. Please try again later.';
+    }
+
+    const data = await res.json();
+    return data.text || "I'm sorry, I couldn't process that request.";
   } catch (error) {
     console.error('Gemini API Error:', error);
-    return "I am currently unavailable. Please try again later.";
+    return 'I am currently unavailable. Please try again later.';
   }
 };
