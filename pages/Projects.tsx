@@ -6,11 +6,76 @@ import ProjectCard from '../components/ProjectCard';
 import ProjectModal from '../components/ProjectModal';
 import { Project } from '../types';
 
+// Toggle to show construction tapes overlay. Set to false to restore normal Projects view.
+const SHOW_CONSTRUCTION = true;
+// When true, the overlay will block pointer interactions (projects become non-interactive).
+const BLOCK_INTERACTIONS = true;
+
+const ConstructionTape: React.FC<{ isDark: boolean; count?: number }> = ({ isDark, count = 3 }) => {
+  const text = 'This Page is still being constructed! Check Later!';
+  const tapes = Array.from({ length: count });
+  return (
+    <>
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+      <div
+        className="fixed inset-0 z-50"
+        style={{ pointerEvents: BLOCK_INTERACTIONS ? 'auto' : 'none' }}
+        aria-hidden="true"
+      >
+        {tapes.map((_, i) => {
+          const top = 12 + i * (80 / Math.max(1, count));
+          const textColorClass = i % 2 === 0 ? 'text-black' : 'text-white';
+          return (
+            <div
+              key={i}
+              className="absolute overflow-hidden"
+              style={{
+                left: '-30%',
+                right: '-30%',
+                top: `${top}%`,
+                height: 64,
+                transform: 'rotate(-15deg)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'auto'
+              }}
+            >
+              <div
+                className={`w-full py-3 px-6 tracking-wider font-bold uppercase bg-yellow-400 ${textColorClass}`}
+                style={{ overflow: 'hidden', whiteSpace: 'nowrap', opacity: 0.98 }}
+              >
+                <div
+                  style={{
+                    display: 'inline-block',
+                    animation: `marquee ${12 + i * 3}s linear infinite`,
+                    willChange: 'transform'
+                  }}
+                >
+                  {Array.from({ length: 6 }).map((_, k) => (
+                    <span key={k} className="mx-8">{text}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
 const Projects: React.FC<{ isDark: boolean }> = ({ isDark }) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   return (
     <div className="pt-24 md:pt-32 pb-24 md:pb-40 px-6 max-w-7xl mx-auto">
+      {SHOW_CONSTRUCTION && <ConstructionTape isDark={isDark} count={4} />}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -28,7 +93,7 @@ const Projects: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
       {/* Grid Layout - Fixed animation behavior */}
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 auto-rows-[350px] md:auto-rows-[450px]"
+        className={`grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 auto-rows-[350px] md:auto-rows-[450px] ${SHOW_CONSTRUCTION && BLOCK_INTERACTIONS ? 'filter blur-lg' : ''}`}
       >
         {PROJECTS.map((project, idx) => {
           const spans = [

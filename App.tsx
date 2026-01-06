@@ -18,16 +18,14 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [isDiscordModalOpen, setIsDiscordModalOpen] = useState(false);
 
-  // Load theme preference
+  // Force light theme on site open (resets any saved preference)
   useEffect(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') {
-      setIsDark(true);
-      document.body.className = 'bg-black text-[#F5F5F7] transition-colors duration-500 overflow-x-hidden';
-    } else {
-      document.body.className = 'bg-[#F5F5F7] text-[#1D1D1F] transition-colors duration-500 overflow-x-hidden';
-    }
+    setIsDark(false);
+    localStorage.setItem('theme', 'light');
+    document.body.className = 'bg-[#F5F5F7] text-[#1D1D1F] transition-colors duration-500 overflow-x-hidden';
   }, []);
+
+
 
   // Scroll to top on page change
   useEffect(() => {
@@ -67,6 +65,8 @@ const App: React.FC = () => {
         setPage={setCurrentPage}
         onContact={openDiscord}
       />
+
+
 
       <main>
         <AnimatePresence mode="wait">

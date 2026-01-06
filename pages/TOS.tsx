@@ -1,11 +1,24 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Printer, ExternalLink } from 'lucide-react';
 
 const TOS: React.FC<{ isDark: boolean }> = ({ isDark }) => {
   // Path to your actual PDF file in the source/public directory
-  const pdfPath = "/tos.pdf"; 
+  // NOTE: file name must match the actual file in the `public/` folder. Current file: `public/TOS.pdf`
+  const pdfPath = "/TOS.pdf"; 
+
+  // Check whether the PDF is available; if it's missing the dev server will typically return index.html
+  // which causes the iframe to load the app (infinite loop). We detect that and show a helpful message instead.
+  const [pdfAvailable, setPdfAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(pdfPath, { method: 'HEAD' })
+      .then(res => { if (!cancelled) setPdfAvailable(res.ok); })
+      .catch(() => { if (!cancelled) setPdfAvailable(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="pt-24 md:pt-32 pb-24 md:pb-40 px-4 md:px-6 max-w-5xl mx-auto min-h-screen">
@@ -64,7 +77,7 @@ const TOS: React.FC<{ isDark: boolean }> = ({ isDark }) => {
             >
               <Download size={16} className="opacity-40 group-hover:opacity-100 group-hover:text-blue-500" />
             </a>
-            <button className={`p-2.5 rounded-xl transition-all group ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}>
+            <button className={`p-2.5 rounded-xl transition-all group ${isDark ? 'hover:bg-white/5' : 'hover:bg-black/5'}`} title="Print" onClick={() => window.print()}>
               <Printer size={16} className="opacity-40 group-hover:opacity-100" />
             </button>
             <a 
@@ -81,12 +94,20 @@ const TOS: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 
         {/* PDF Viewer Interface */}
         <div className={`flex-1 relative overflow-hidden bg-zinc-100 dark:bg-zinc-950`}>
-          <iframe
-            src={`${pdfPath}#toolbar=0&navpanes=0&scrollbar=1`}
-            className="w-full h-full border-none relative z-10"
-            title="Terms of Service Document"
-          />
-          
+          {pdfAvailable === false ? (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8 text-center">
+              <div className="mb-4 text-lg font-bold">TOS PDF not found</div>
+              <p className="mb-4 text-sm opacity-80">The application expected to find the PDF at <code className="bg-black/5 px-2 rounded">{pdfPath}</code>. If you want to update the Terms, place the file at <code className="bg-black/5 px-2 rounded">public/TOS.pdf</code> and restart the dev server.</p>
+              <a href={pdfPath} className="text-blue-600 underline">Open {pdfPath}</a>
+            </div>
+          ) : (
+            <iframe
+              src={`${pdfPath}#toolbar=0&navpanes=0&scrollbar=1`}
+              className="w-full h-full border-none relative z-10"
+              title="Terms of Service Document"
+            />
+          )}
+
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 pointer-events-none z-0">
              <div className="w-16 h-16 rounded-[1.5rem] bg-blue-500/10 flex items-center justify-center text-blue-500 mb-6 animate-pulse border border-blue-500/20">
                 <FileText size={32} />
