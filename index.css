@@ -1,0 +1,9 @@
+/* Minimal placeholder stylesheet to avoid 404 and provide base resets */
+html, body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keep this file lightweight; most styles use Tailwind via CDN */
